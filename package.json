@@ -1,0 +1,22 @@
+{
+  "name": "partytube-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PartyTube - Collaborative YouTube Music Queue for Parties",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "db:generate": "turbo run db:generate",
+    "db:push": "turbo run db:push",
+    "db:use:mysql": "pnpm -F @partytube/database db:use:mysql",
+    "db:use:sqlite": "pnpm -F @partytube/database db:use:sqlite",
+    "bundle:api": "node scripts/bundle-api.mjs"
+  },
+  "devDependencies": {
+    "turbo": "^2.4.0",
+    "typescript": "^5.7.3"
+  },
+  "packageManager": "pnpm@10.33.0"
+}

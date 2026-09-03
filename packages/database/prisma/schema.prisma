@@ -1,0 +1,53 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Room {
+  id                   String         @id @default(uuid())
+  code                 String         @unique
+  hostToken            String
+  title                String?
+  status               String         @default("ACTIVE")
+  currentQueueItemId   String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  queueItems           QueueItem[]
+  sessions             GuestSession[]
+}
+
+model QueueItem {
+  id                String    @id @default(uuid())
+  roomId            String
+  room              Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  videoId           String
+  title             String
+  thumbnailUrl      String
+  channelTitle      String
+  durationSeconds   Int
+  addedBy           String
+  status            String    @default("PENDING")
+  orderIndex        Int
+  playedAt          DateTime?
+  createdAt         DateTime  @default(now())
+
+  @@index([roomId, status])
+  @@index([roomId, orderIndex])
+}
+
+model GuestSession {
+  id             String    @id @default(uuid())
+  roomId         String
+  room           Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  socketId       String
+  nickname       String
+  ipHash         String    @default("")
+  joinedAt       DateTime  @default(now())
+  lastActiveAt   DateTime  @updatedAt
+
+  @@index([roomId])
+}

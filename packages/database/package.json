@@ -1,0 +1,28 @@
+{
+  "name": "@partytube/database",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "prisma"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "db:generate": "node scripts/sync-schema.mjs && prisma generate",
+    "db:use:mysql": "node scripts/sync-schema.mjs mysql && prisma generate",
+    "db:use:sqlite": "node scripts/sync-schema.mjs sqlite && prisma generate",
+    "db:push": "node scripts/sync-schema.mjs && prisma db push"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.4.1"
+  },
+  "devDependencies": {
+    "@partytube/tsconfig": "workspace:*",
+    "prisma": "^6.4.1",
+    "typescript": "^5.7.3"
+  }
+}
