@@ -34,6 +34,13 @@ function resolveProvider() {
   const detected = detectProviderFromUrl(envUrl);
   if (detected) return detected;
 
+  // If no .env and no env var (e.g. in CI), create a fallback .env for Prisma
+  if (!existsSync(ENV_PATH)) {
+    try {
+      writeFileSync(ENV_PATH, 'DATABASE_URL="file:./dev.db"\n');
+    } catch {}
+  }
+
   return 'sqlite'; // default to sqlite
 }
 
