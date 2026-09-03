@@ -60,9 +60,11 @@ jobs:
           cp -a deploy-api/. "$bundle_dir/"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git reset --hard HEAD
+          git clean -fd
           git fetch origin dist-plesk || true
           if git rev-parse --verify origin/dist-plesk >/dev/null 2>&1; then
-            git checkout -B dist-plesk origin/dist-plesk
+            git checkout -f -B dist-plesk origin/dist-plesk
           else
             git checkout --orphan dist-plesk
           fi
