@@ -192,7 +192,7 @@ function smokeTest() {
 
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch('http://localhost:3998/api/rooms');
+        const res = await fetch('http://localhost:3998/health');
         finish(res.status < 500, `HTTP status ${res.status}`);
       } catch (e) {
         finish(false, e.message);

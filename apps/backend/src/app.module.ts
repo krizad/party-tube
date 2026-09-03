@@ -5,6 +5,7 @@ import { RoomsModule } from './rooms/rooms.module';
 import { QueueModule } from './queue/queue.module';
 import { YoutubeModule } from './youtube/youtube.module';
 import { GatewayModule } from './gateway/gateway.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { GatewayModule } from './gateway/gateway.module';
       isGlobal: true,
     }),
     PrismaModule,
+    HealthModule,
     RoomsModule,
     QueueModule,
     YoutubeModule,
