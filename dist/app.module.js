@@ -14,6 +14,7 @@ const rooms_module_1 = require("./rooms/rooms.module");
 const queue_module_1 = require("./queue/queue.module");
 const youtube_module_1 = require("./youtube/youtube.module");
 const gateway_module_1 = require("./gateway/gateway.module");
+const health_module_1 = require("./health/health.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -24,6 +25,7 @@ exports.AppModule = AppModule = __decorate([
                 isGlobal: true,
             }),
             prisma_module_1.PrismaModule,
+            health_module_1.HealthModule,
             rooms_module_1.RoomsModule,
             queue_module_1.QueueModule,
             youtube_module_1.YoutubeModule,
