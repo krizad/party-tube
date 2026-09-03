@@ -47,7 +47,7 @@ export function usePartySocket({
     if (!roomCode || !nickname) return;
 
     const socket: Socket = io(WS_URL, {
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
     });
