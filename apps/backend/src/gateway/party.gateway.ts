@@ -28,6 +28,8 @@ import {
   cors: {
     origin: '*',
   },
+  pingInterval: 20_000,
+  pingTimeout: 60_000,
 })
 export class PartyGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
