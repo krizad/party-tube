@@ -454,6 +454,8 @@ exports.PartyGateway = PartyGateway = PartyGateway_1 = __decorate([
         cors: {
             origin: '*',
         },
+        pingInterval: 20_000,
+        pingTimeout: 60_000,
     }),
     __metadata("design:paramtypes", [rooms_service_1.RoomsService,
         queue_service_1.QueueService,
