@@ -46,8 +46,10 @@ export function usePartySocket({
   useEffect(() => {
     if (!roomCode || !nickname) return;
 
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
     const socket: Socket = io(WS_URL, {
-      transports: ['polling', 'websocket'],
+      transports: isLocal ? ['websocket', 'polling'] : ['polling'],
+      upgrade: isLocal,
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
     });
