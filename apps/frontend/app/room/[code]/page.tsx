@@ -58,7 +58,7 @@ export default function GuestRoomPage() {
     removeFromQueue,
   } = usePartySocket({
     roomCode,
-    nickname: nickname || 'Guest',
+    nickname: hasNickname ? nickname : '',
     role: 'guest',
   });
 

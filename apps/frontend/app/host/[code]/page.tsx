@@ -36,6 +36,10 @@ export default function HostPage() {
     }
   }, [roomCode, tokenFromUrl]);
 
+  const handleSeekCommand = React.useCallback((time: number) => {
+    setRemoteSeekTime(time);
+  }, []);
+
   const {
     isConnected,
     queue,
@@ -55,9 +59,7 @@ export default function HostPage() {
     nickname: 'Host (TV)',
     role: 'host',
     hostToken,
-    onSeekCommand: (time) => {
-      setRemoteSeekTime(time);
-    },
+    onSeekCommand: handleSeekCommand,
   });
 
   return (

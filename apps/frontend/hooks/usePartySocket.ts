@@ -43,6 +43,15 @@ export function usePartySocket({
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
 
+  const onTrackChangeRef = useRef(onTrackChange);
+  onTrackChangeRef.current = onTrackChange;
+
+  const onSeekCommandRef = useRef(onSeekCommand);
+  onSeekCommandRef.current = onSeekCommand;
+
+  const tRef = useRef(t);
+  tRef.current = t;
+
   useEffect(() => {
     if (!roomCode || !nickname) return;
 
@@ -102,22 +111,24 @@ export function usePartySocket({
       if (data.track?.durationSeconds) {
         setDuration(data.track.durationSeconds);
       }
-      if (onTrackChange) {
-        onTrackChange(data.track);
+      if (onTrackChangeRef.current) {
+        onTrackChangeRef.current(data.track);
       }
       if (data.track) {
-        toast.info(`${t('nowPlaying')}: ${data.track.title}`);
+        toast.info(`${tRef.current('nowPlaying')}: ${data.track.title}`);
       }
     });
 
     socket.on('toast:host_added', (data: { title: string }) => {
-      toast.info(t('hostAddedToast', { title: data.title }));
+      toast.info(tRef.current('hostAddedToast', { title: data.title }));
     });
 
     socket.on('guest:joined', (data: { nickname: string; guestCount: number; members?: RoomMember[] }) => {
       setGuestCount(data.guestCount);
       if (data.members) setMembers(data.members);
-      toast.success(t('joinedPartyToast', { nickname: data.nickname }));
+      if (data.nickname && data.nickname !== nickname) {
+        toast.success(tRef.current('joinedPartyToast', { nickname: data.nickname }));
+      }
     });
 
     socket.on('guest:left', (data: { nickname: string; guestCount: number; members?: RoomMember[] }) => {
@@ -131,8 +142,8 @@ export function usePartySocket({
     });
 
     socket.on('player:seek_command', (data: { time: number; by?: string }) => {
-      if (onSeekCommand) {
-        onSeekCommand(data.time);
+      if (onSeekCommandRef.current) {
+        onSeekCommandRef.current(data.time);
       }
     });
 
@@ -144,7 +155,7 @@ export function usePartySocket({
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [roomCode, nickname, role, hostToken, onTrackChange, onSeekCommand, t]);
+  }, [roomCode, nickname, role, hostToken]);
 
   const addToQueue = useCallback(
     (track: Omit<AddQueueItemPayload, 'roomCode'>) => {

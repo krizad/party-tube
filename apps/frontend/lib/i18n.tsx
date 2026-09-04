@@ -221,14 +221,14 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   }, []);
 
-  const setLanguage = (lang: Language) => {
+  const setLanguage = React.useCallback((lang: Language) => {
     setLanguageState(lang);
     if (typeof window !== 'undefined') {
       localStorage.setItem('partytube_lang', lang);
     }
-  };
+  }, []);
 
-  const t = (key: TranslationKey, params?: Record<string, string | number>): string => {
+  const t = React.useCallback((key: TranslationKey, params?: Record<string, string | number>): string => {
     const dict = translations[language] || translations.th;
     let text = dict[key] || translations.th[key] || key;
     if (params) {
@@ -237,7 +237,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
       });
     }
     return text;
-  };
+  }, [language]);
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t }}>
