@@ -18,6 +18,7 @@ export declare class YoutubeService implements OnModuleInit {
         results: SearchResultItem[];
         cached: boolean;
     }>;
+    private fetchGoogleSuggestions;
     getSuggestions(query: string): Promise<string[]>;
     getRecommendations(videoId: string): Promise<SearchResultItem[]>;
 }

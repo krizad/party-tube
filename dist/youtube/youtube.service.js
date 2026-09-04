@@ -14,6 +14,7 @@ exports.YoutubeService = void 0;
 const common_1 = require("@nestjs/common");
 const youtubei_js_1 = require("youtubei.js");
 const lru_cache_1 = require("lru-cache");
+const https = require("node:https");
 let YoutubeService = YoutubeService_1 = class YoutubeService {
     constructor() {
         this.logger = new common_1.Logger(YoutubeService_1.name);
@@ -183,21 +184,92 @@ let YoutubeService = YoutubeService_1 = class YoutubeService {
             return { query: trimmedQuery, results: [], cached: false };
         }
     }
+    async fetchGoogleSuggestions(query) {
+        const q = encodeURIComponent(query.trim());
+        const url = `https://suggestqueries-clients6.youtube.com/complete/search?client=youtube&hl=th&gl=th&ds=yt&oe=utf-8&ie=utf-8&q=${q}`;
+        return new Promise((resolve) => {
+            https
+                .get(url, (res) => {
+                const chunks = [];
+                res.on('data', (c) => chunks.push(c));
+                res.on('end', () => {
+                    try {
+                        const raw = Buffer.concat(chunks).toString('utf-8');
+                        const match = raw.match(/window\.google\.ac\.h\((.*)\)/);
+                        if (match && match[1]) {
+                            const parsed = JSON.parse(match[1]);
+                            const items = (parsed[1] || []).map((row) => row[0]).filter(Boolean);
+                            resolve(items);
+                        }
+                        else {
+                            resolve([]);
+                        }
+                    }
+                    catch {
+                        resolve([]);
+                    }
+                });
+            })
+                .on('error', () => resolve([]));
+        });
+    }
     async getSuggestions(query) {
-        const trimmed = query.trim().toLowerCase();
-        if (!trimmed)
+        const rawQuery = query.trim();
+        if (!rawQuery)
             return [];
-        const cached = this.suggestionCache.get(trimmed);
+        const cacheKey = rawQuery.toLowerCase();
+        const cached = this.suggestionCache.get(cacheKey);
         if (cached)
             return cached;
         try {
-            const yt = await this.getInnertubeClient();
-            const suggestions = await yt.getSearchSuggestions(trimmed);
-            this.suggestionCache.set(trimmed, suggestions);
-            return suggestions;
+            const raw = await this.fetchGoogleSuggestions(rawQuery);
+            const musicKeywords = [
+                'เพลง',
+                'คาราโอเกะ',
+                'karaoke',
+                'mv',
+                'cover',
+                'lyrics',
+                'เนื้อเพลง',
+                'official',
+                'audio',
+                'คอร์ด',
+                'คอนเสิร์ต',
+                'concert',
+            ];
+            const musicMatches = [];
+            const otherMatches = [];
+            for (const item of raw) {
+                const lower = item.toLowerCase();
+                if (musicKeywords.some((k) => lower.includes(k))) {
+                    musicMatches.push(item);
+                }
+                else {
+                    otherMatches.push(item);
+                }
+            }
+            const smartMusicPills = [];
+            if (!rawQuery.startsWith('เพลง') && !rawQuery.startsWith('music')) {
+                smartMusicPills.push(`เพลง ${rawQuery}`);
+            }
+            if (!rawQuery.includes('คาราโอเกะ') && !rawQuery.includes('karaoke')) {
+                smartMusicPills.push(`${rawQuery} คาราโอเกะ`);
+            }
+            const set = new Set();
+            const finalSuggestions = [];
+            for (const item of [...smartMusicPills, ...musicMatches, ...otherMatches]) {
+                const normalized = item.trim();
+                if (!set.has(normalized.toLowerCase()) && normalized.toLowerCase() !== rawQuery.toLowerCase()) {
+                    set.add(normalized.toLowerCase());
+                    finalSuggestions.push(normalized);
+                }
+            }
+            const results = finalSuggestions.slice(0, 8);
+            this.suggestionCache.set(cacheKey, results);
+            return results;
         }
         catch (err) {
-            this.logger.warn(`Could not fetch suggestions for "${trimmed}": ${err.message}`);
+            this.logger.warn(`Could not fetch suggestions for "${rawQuery}": ${err.message}`);
             return [];
         }
     }
