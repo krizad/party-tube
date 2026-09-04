@@ -153,13 +153,14 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onAddSong }) => {
       {/* Instant Suggestions Pills */}
       {suggestions.length > 0 && !isUrl && (
         <div className="flex gap-1.5 overflow-x-auto py-2 px-0.5 scrollbar-none">
-          {suggestions.slice(0, 5).map((sugg, i) => (
+          {suggestions.slice(0, 7).map((sugg, i) => (
             <button
               key={i}
               onClick={() => setQuery(sugg)}
-              className="flex-shrink-0 px-2.5 py-1 rounded-md bg-party-cardHover hover:bg-party-card text-xs text-gray-300 hover:text-white border border-party-glowBorder/60 transition-colors"
+              className="flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-party-cardHover hover:bg-party-neonPurple/20 hover:border-party-neonPurple/50 text-xs text-gray-300 hover:text-white border border-party-glowBorder/60 transition-all shadow-sm active:scale-95"
             >
-              {sugg}
+              <Music2 className="w-3 h-3 text-party-neonPink flex-shrink-0" />
+              <span>{sugg}</span>
             </button>
           ))}
         </div>

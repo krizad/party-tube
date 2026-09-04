@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Innertube, UniversalCache } from 'youtubei.js';
 import { LRUCache } from 'lru-cache';
 import { SearchResultItem } from '@partytube/shared-types';
+import * as https from 'node:https';
 
 @Injectable()
 export class YoutubeService implements OnModuleInit {
@@ -196,20 +197,99 @@ export class YoutubeService implements OnModuleInit {
     }
   }
 
-  async getSuggestions(query: string): Promise<string[]> {
-    const trimmed = query.trim().toLowerCase();
-    if (!trimmed) return [];
+  private async fetchGoogleSuggestions(query: string): Promise<string[]> {
+    const q = encodeURIComponent(query.trim());
+    const url = `https://suggestqueries-clients6.youtube.com/complete/search?client=youtube&hl=th&gl=th&ds=yt&oe=utf-8&ie=utf-8&q=${q}`;
 
-    const cached = this.suggestionCache.get(trimmed);
+    return new Promise((resolve) => {
+      https
+        .get(url, (res) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (c) => chunks.push(c));
+          res.on('end', () => {
+            try {
+              const raw = Buffer.concat(chunks).toString('utf-8');
+              const match = raw.match(/window\.google\.ac\.h\((.*)\)/);
+              if (match && match[1]) {
+                const parsed = JSON.parse(match[1]);
+                const items: string[] = (parsed[1] || []).map((row: any) => row[0]).filter(Boolean);
+                resolve(items);
+              } else {
+                resolve([]);
+              }
+            } catch {
+              resolve([]);
+            }
+          });
+        })
+        .on('error', () => resolve([]));
+    });
+  }
+
+  async getSuggestions(query: string): Promise<string[]> {
+    const rawQuery = query.trim();
+    if (!rawQuery) return [];
+
+    const cacheKey = rawQuery.toLowerCase();
+    const cached = this.suggestionCache.get(cacheKey);
     if (cached) return cached;
 
     try {
-      const yt = await this.getInnertubeClient();
-      const suggestions = await yt.getSearchSuggestions(trimmed);
-      this.suggestionCache.set(trimmed, suggestions);
-      return suggestions;
+      const raw = await this.fetchGoogleSuggestions(rawQuery);
+
+      // Keywords that indicate musical/karaoke/song content
+      const musicKeywords = [
+        'เพลง',
+        'คาราโอเกะ',
+        'karaoke',
+        'mv',
+        'cover',
+        'lyrics',
+        'เนื้อเพลง',
+        'official',
+        'audio',
+        'คอร์ด',
+        'คอนเสิร์ต',
+        'concert',
+      ];
+
+      const musicMatches: string[] = [];
+      const otherMatches: string[] = [];
+
+      for (const item of raw) {
+        const lower = item.toLowerCase();
+        if (musicKeywords.some((k) => lower.includes(k))) {
+          musicMatches.push(item);
+        } else {
+          otherMatches.push(item);
+        }
+      }
+
+      // Smart music suggestions to prepend so user sees songs first
+      const smartMusicPills: string[] = [];
+      if (!rawQuery.startsWith('เพลง') && !rawQuery.startsWith('music')) {
+        smartMusicPills.push(`เพลง ${rawQuery}`);
+      }
+      if (!rawQuery.includes('คาราโอเกะ') && !rawQuery.includes('karaoke')) {
+        smartMusicPills.push(`${rawQuery} คาราโอเกะ`);
+      }
+
+      const set = new Set<string>();
+      const finalSuggestions: string[] = [];
+
+      for (const item of [...smartMusicPills, ...musicMatches, ...otherMatches]) {
+        const normalized = item.trim();
+        if (!set.has(normalized.toLowerCase()) && normalized.toLowerCase() !== rawQuery.toLowerCase()) {
+          set.add(normalized.toLowerCase());
+          finalSuggestions.push(normalized);
+        }
+      }
+
+      const results = finalSuggestions.slice(0, 8);
+      this.suggestionCache.set(cacheKey, results);
+      return results;
     } catch (err: any) {
-      this.logger.warn(`Could not fetch suggestions for "${trimmed}": ${err.message}`);
+      this.logger.warn(`Could not fetch suggestions for "${rawQuery}": ${err.message}`);
       return [];
     }
   }
