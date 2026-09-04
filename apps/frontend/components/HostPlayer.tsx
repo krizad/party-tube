@@ -48,6 +48,38 @@ export const HostPlayer: React.FC<HostPlayerProps> = ({
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [scrubValue, setScrubValue] = useState<number>(0);
 
+  // Controls visibility & auto-hide (after 3s of mouse inactivity)
+  const [showControls, setShowControls] = useState(true);
+  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const resetControlsTimer = useCallback(() => {
+    setShowControls(true);
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+    if (isPlaying && !isScrubbing) {
+      controlsTimeoutRef.current = setTimeout(() => {
+        setShowControls(false);
+      }, 3000);
+    }
+  }, [isPlaying, isScrubbing]);
+
+  useEffect(() => {
+    if (!isPlaying) {
+      setShowControls(true);
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
+    } else {
+      resetControlsTimer();
+    }
+    return () => {
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
+    };
+  }, [isPlaying, resetControlsTimer]);
+
   // YouTube IFrame API Script loader
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -231,7 +263,17 @@ export const HostPlayer: React.FC<HostPlayerProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative flex flex-col w-full aspect-video max-h-[70vh] bg-black rounded-2xl overflow-hidden border border-party-glowBorder shadow-xl group"
+      onMouseMove={resetControlsTimer}
+      onClick={resetControlsTimer}
+      onTouchStart={resetControlsTimer}
+      onMouseLeave={() => {
+        if (isPlaying && !isScrubbing) {
+          setShowControls(false);
+        }
+      }}
+      className={`relative flex flex-col w-full aspect-video max-h-[70vh] bg-black rounded-2xl overflow-hidden border border-party-glowBorder shadow-xl group transition-all duration-300 ${
+        !showControls && isPlaying ? 'cursor-none' : 'cursor-default'
+      }`}
     >
       <div className="w-full h-full relative">
         <div id="youtube-player-iframe" className="w-full h-full" />
@@ -256,7 +298,11 @@ export const HostPlayer: React.FC<HostPlayerProps> = ({
       </div>
 
       {currentTrack && (
-        <div className="absolute top-0 inset-x-0 p-4 sm:p-5 bg-gradient-to-b from-black/85 via-black/40 to-transparent flex items-start justify-between z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <div
+          className={`absolute top-0 inset-x-0 p-4 sm:p-5 bg-gradient-to-b from-black/85 via-black/40 to-transparent flex items-start justify-between z-10 transition-opacity duration-300 ${
+            showControls ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
+        >
           <div className="flex items-center gap-3">
             <AudioVisualizer isPlaying={isPlaying} />
             <div>
@@ -275,7 +321,11 @@ export const HostPlayer: React.FC<HostPlayerProps> = ({
       )}
 
       {currentTrack && (
-        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent p-4 flex flex-col gap-2 z-10 opacity-90 group-hover:opacity-100 transition-opacity">
+        <div
+          className={`absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent p-4 flex flex-col gap-2 z-10 transition-opacity duration-300 ${
+            showControls ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
+        >
           {/* YouTube-style Timeline Scrubber Bar */}
           <div className="flex items-center gap-3 w-full">
             <span className="text-[11px] font-mono font-medium text-gray-300 min-w-[32px]">
